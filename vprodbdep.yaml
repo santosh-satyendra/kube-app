@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: vprodb
-          image: satya263/vprofiledb:V1
+          image: satya263/vprofiledb:v1.0
           ports:
             - name: vprodb-port
               containerPort: 3306
