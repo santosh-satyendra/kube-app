@@ -5,50 +5,44 @@ metadata:
   labels:
     app: vprodb
 spec:
+  replicas: 1  # This should be directly under spec, not under selector
   selector:
     matchLabels:
       app: vprodb
-    replicas: 1
-    templates:
-      metadata:
-        lables:
-          app: vprodb
-      spec:
-        containers:
-          - name: vprodb
-            image: satya263/vprofiledb:V1
-            volumeMounts:
-              - mountPath: /var/lib/mysql
-                name: vpro-db-data
-            ports:
-              - name: vprodb-port
-                containerPort: 3306
-            env:
-              - name: MYSQL_ROOT_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    key:
-                      name: app-secret
-                      key: db-pass
-        nodeSelector:
-          zone: us-east-1a
-        volumes:
-          - name: vpro-db-data
-            awsElasticBlockStore:
-              volumeId: vol-08eb7c17ec0eeae9a
-              fsType: ext4
+  template:  # This should be directly under spec, not under selector
+    metadata:
+      labels:  # Corrected "lables" to "labels"
+        app: vprodb
+    spec:
+      containers:
+        - name: vprodb
+          image: satya263/vprofiledb:V1
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: vpro-db-data
+          ports:
+            - name: vprodb-port
+              containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret  # Correct indentation and structure
+                  key: db-pass
 
-        initContainers:
-          - name: busybox
-            image: busybox:latest
-            args: ["rm", "-rf", "/var/lib/mysql/lost+found"]
-            volumeMounts:
-              - name : vpro-db-data
-              - mountPath: /var/lib/mysql
+      nodeSelector:
+        zone: us-east-1a
 
+      volumes:
+        - name: vpro-db-data
+          awsElasticBlockStore:
+            volumeId: vol-08eb7c17ec0eeae9a
+            fsType: ext4
 
-
-
-
-
-
+      initContainers:
+        - name: busybox
+          image: busybox:latest
+          args: ["rm", "-rf", "/var/lib/mysql/lost+found"]
+          volumeMounts:
+            - name: vpro-db-data
+              mountPath: /var/lib/mysql  # Correct indentation and structure
