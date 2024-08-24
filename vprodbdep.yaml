@@ -2,41 +2,46 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vprodb
+  labels:
+    app: vprodb
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: vprodb
-  template:
-    metadata:
-      labels:
-        app: vprodb
-    spec:
-      containers:
-        - name: vprodb
-          image: satya263/vprofiledb:v1.0
-          ports:
-            - name: vprodb-port
-              containerPort: 3306
-          volumeMounts:
-            - mountPath: /var/lib/mysql
-              name: vpro-db-data
-          env:
-            - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: app-secret
-                  key: db-pass
-      volumes:
-        - name: vpro-db-data
-          persistentVolumeClaim:
-            claimName: vpro-db-pvc
-      nodeSelector:
-        zone: us-east-1a
-      initContainers:
-        - name: busybox
-          image: busybox:latest
-          args: ["rm", "-rf", "/var/lib/mysql/lost+found"]
-          volumeMounts:
-            - name: vpro-db-data
-              mountPath: /var/lib/mysql
+    replicas: 1
+    templates:
+      metadata:
+        lables:
+          app: vprodb
+      spec:
+        containers:
+          - name: vprodb
+            image: satya263/vprofiledb:V1
+            volumeMounts:
+              - mountPath: /var/lib/mysql
+                name: vpro-db-data
+            ports:
+              - name: vprodb-port
+                containerPort: 3306
+            env:
+              - name: MYSQL_ROOT_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key:
+                      name: app-secret
+                      key: db-pass
+        nodeSelector:
+          zone: us-east-1a
+        volumes:
+          - name: vpro-db-data
+            awsElasticBlockStore:
+              volumeId: vol-08eb7c17ec0eeae9a
+              fsType: ext4
+
+        initContainers:
+          - name: busybox
+            image: busybox:latest
+            args: ["rm", "-rf", "/var/lib/mysql/lost+found"]
+            volumeMounts:
+              - name : vpro-db-data
+              - mountPath: /var/lib/mysql
