@@ -5,22 +5,27 @@ metadata:
   labels:
     app: vprodb
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: vprodb
-  replicas: 1
   template:
     metadata:
       labels:
         app: vprodb
     spec:
+      nodeSelector:
+        zone: us-east-1a # Ensure your nodes are labeled with this zone
+      initContainers:
+        - name: busybox
+          image: busybox:latest
+          args: ["rm", "-rf", "/var/lib/mysql/lost+found"]
+          volumeMounts:
+            - name: vpro-db-data
+              mountPath: /var/lib/mysql
       containers:
         - name: vprodb
-          image:
-            vprofile/vprofiledb
-            #args:
-            #- "--ignore-db-dir"
-            #- "lost+found"
+          image: vprofile/vprofiledb
           volumeMounts:
             - mountPath: /var/lib/mysql
               name: vpro-db-data
@@ -31,21 +36,10 @@ spec:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: app-secret
+                  name: app-secret # Ensure the secret 'app-secret' exists
                   key: db-pass
-          nodeSelector:
-          zone: us-east-1a
-          volumes:
-            - name: vpro-db-data
-              # This AWS EBS volume must already exist.
-              awsElasticBlockStore:
-                volumeID: vol-0fec5dee5ad656034
-                fsType: ext4
-
-    initContainers:
-      - name: busybox
-        image: busybox:latest
-        args: ["rm", "-rf", "/var/lib/mysql/lost+found"]
-        volumeMounts:
-          - name: vpro-db-data
-            mountPath: /var/lib/mysql
+      volumes:
+        - name: vpro-db-data
+          awsElasticBlockStore:
+            volumeID: vol-0fec5dee5ad656034 # Ensure the volume ID is valid
+            fsType: ext4
